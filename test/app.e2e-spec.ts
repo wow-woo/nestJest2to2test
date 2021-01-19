@@ -238,6 +238,23 @@ describe('App (e2e)', () => {
           expect(res.body).toEqual({"data": {"createAccount": {"error": null, "ok": true}}})
         })
       })
+
+      it('Should fail to create account', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            createAccount(input:{
+              email:"${email}"
+              password:"${password}"
+              role:Listener
+            }){
+              ok
+              error
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"createAccount": {"error": "There is a user with that email already", "ok": false}}})
+        })
+      })
     });
 
     describe('2. login', ()=>{
@@ -259,6 +276,24 @@ describe('App (e2e)', () => {
           token = res.body.data.login.token
         })
       })
+
+      it('Should fail to log in', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            login(input:{
+              email:"${email+'oop'}"
+              password:"${password+'oop'}"
+            }){
+              ok
+              error
+              token
+            }
+            }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"login": {"error": "User not found", "ok": 
+          false, "token": null }}})
+        })
+      })
     });
 
     describe('3. me', ()=>{
@@ -274,6 +309,21 @@ describe('App (e2e)', () => {
         }).set('x-jwt', token).expect(200).expect(res=>{
           expect(res.body).toEqual({"data": {"me": {"email": "email@email.com", "id": expect.any(Number), "role": "Listener"}}})
           accountId = res.body.data.me.id
+        })
+      })
+
+      it('Should fail to retrieve me', ()=>{
+        return request_supertest().send({
+          query:`{
+            me{
+              id
+              email
+              role
+            }
+          }`
+        }).set('x-jwt', "wrongToken").expect(200).expect(res=>{
+          expect(res?.body?.data).toBe(null)
+          expect(res?.body?.errors[0]?.extensions?.exception?.message).toBe("Forbidden resource")
         })
       })
     });
@@ -295,25 +345,88 @@ describe('App (e2e)', () => {
           expect(res.body).toEqual({"data": {"seeProfile": {"error": null, "ok": true, "user": {"email": "email@email.com", "id": accountId}}}})
         })
       })
+
+      it('Should fail to see a profile', ()=>{
+        return request_supertest().send({
+          query:`{
+            seeProfile(userId:${accountId+1}){
+              ok
+              error
+              user{
+                id
+                email
+              }
+            }
+          }`
+        }).set('x-jwt', token).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"seeProfile": {"error": "User Not Found", "ok": false, "user": null }}})
+        })
+      })
     });
 
     describe('5. editProfile', ()=>{
-      it('Should edit my profile successfully', ()=>{
+      it('Should change email successfully', ()=>{
         return request_supertest().send({
           query:`mutation{
             editProfile(input:{
                 email:"newemail@email.com"
-               password:"newpassword"
-           }){
-             ok
-             error
-           }
-           }`
+            }){
+              ok
+              error
+            }
+            }`
         }).set('x-jwt', token).expect(200).expect(res=>{
           expect(res.body).toEqual({"data": {"editProfile": {"error": null, 
           "ok": true}}})
         })
       })
+
+      it('Should change password successfully', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            editProfile(input:{
+                password:"newpassword"
+            }){
+              ok
+              error
+            }
+            }`
+        }).set('x-jwt', token).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"editProfile": {"error": null, 
+          "ok": true}}})
+        })
+      })
+
+      it('Should have new email successfully', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            editProfile(input:{
+                email:"newemail@email.com"
+            }){
+              ok
+              error
+            }
+            }`
+        }).set('x-jwt', token).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"editProfile": {"error": null, 
+          "ok": true}}})
+        }).then(()=>{
+          return request_supertest().send({
+            query:`{
+              me{
+                id
+                email
+                role
+              }
+            }`
+          }).set('x-jwt', token).expect(200).expect(res=>{
+            expect(res.body).toEqual({"data": {"me": {"email": "newemail@email.com", "id": expect.any(Number), "role": "Listener"}}})
+            accountId = res.body.data.me.id
+          })
+        })
+      })
+
+      
     });
 
   });
