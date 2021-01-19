@@ -50,7 +50,7 @@ describe('App (e2e)', () => {
     })
 
     describe('2. createEpisode', ()=>{
-      it('Should create an episode', ()=>{
+      it('Should create an episode successfully', ()=>{
         return request_supertest().send({
           query:`mutation{
             createEpisode(input:{
@@ -70,10 +70,29 @@ describe('App (e2e)', () => {
           episodeId = res.body.data.createEpisode.id
         })
       })
+
+      it('Should fail to create an episode', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            createEpisode(input:{
+              podcastId:${podcastId + 1}
+              title:"My first episode 10"
+              category:"romance"    
+              }){
+              error
+              ok
+              id
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"createEpisode": {"error": 
+          `Podcast with id ${podcastId+1} not found`, "id": null, "ok": false }}})
+        })
+      })
     })
 
     describe('3. getPodcast', ()=>{
-      it('Should retrieve a podcast', ()=>{
+      it('Should retrieve a podcast successfully', ()=>{
         return request_supertest().send({
           query:`{
             getPodcast(input:{
@@ -91,10 +110,29 @@ describe('App (e2e)', () => {
           null, "ok": true, "podcast":{ id: podcastId}}}})
         })
       })
+
+      it('Should fail to retrieve a podcast', ()=>{
+        return request_supertest().send({
+          query:`{
+            getPodcast(input:{
+              id:${podcastId+1}
+            }){
+              ok
+              error
+              podcast{
+                id
+              }
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"getPodcast": {"error": 
+          `Podcast with id ${podcastId+1} not found`, "ok": false, "podcast": null }}})
+        })
+      })
     })
 
     describe('4. getAllPodcasts', ()=>{
-      it('Should retrieve all podcasts', ()=>{
+      it('Should retrieve all podcasts successfully', ()=>{
         return request_supertest().send({
           query:`{
             getAllPodcasts{
@@ -113,7 +151,7 @@ describe('App (e2e)', () => {
     })
 
     describe('5. getEpisodes', ()=>{
-      it('Should retrieve all Episodes', ()=>{
+      it('Should retrieve all Episodes successfully', ()=>{
         return request_supertest().send({
           query:`{
             getEpisodes(input:{
@@ -131,10 +169,29 @@ describe('App (e2e)', () => {
           null, "ok": true, "episodes":[{ id: episodeId}] }}})
         })
       })
+
+      it('Should fail to retrieve all Episodes', ()=>{
+        return request_supertest().send({
+          query:`{
+            getEpisodes(input:{
+              id:${podcastId+1}
+            }){
+              ok
+              error
+              episodes{
+                id
+              }
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"getEpisodes": {"error": 
+          `Podcast with id ${podcastId+1} not found`, "ok": false, "episodes": null }}})
+        })
+      })
     })
 
     describe('6. updatePodcast', ()=>{
-      it('Should update a podcast', ()=>{
+      it('Should update a podcast successfully', ()=>{
         return request_supertest().send({
           query:`mutation{
             updatePodcast(input:{
@@ -153,10 +210,50 @@ describe('App (e2e)', () => {
           null, "ok": true }}})
         })
       })
+
+      it('Should fail to update a podcast', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            updatePodcast(input:{
+              id:${podcastId+1}
+              payload:{
+                title:"updated title"
+                rating:3
+              }
+            }){
+              ok
+              error
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"updatePodcast": {"error": 
+          `Podcast with id ${podcastId+1} not found`, "ok": false }}})
+        })
+      })
+
+      it('Should fail to update a podcast, due to rating value', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            updatePodcast(input:{
+              id:${podcastId}
+              payload:{
+                title:"updated title"
+                rating:999
+              }
+            }){
+              ok
+              error
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"updatePodcast": {"error": 
+          "Rating must be between 1 and 5.", "ok": false }}})
+        })
+      })
     })
     
     describe('7. updateEpisode', ()=>{
-      it('Should update an episode', ()=>{
+      it('Should update an episode successfully', ()=>{
         return request_supertest().send({
           query:`mutation{
             updateEpisode(input:{
@@ -174,28 +271,63 @@ describe('App (e2e)', () => {
           null, "ok": true }}})
         })
       })
+
+      it('Should fail to update an episode', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            updateEpisode(input:{
+              podcastId: ${podcastId+1}
+              episodeId: ${episodeId+1}
+              category:"update category"
+              title:"update title"
+            }){
+              ok
+              error
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"updateEpisode": {"error": 
+          `Podcast with id ${podcastId+1} not found`, "ok": false }}})
+        })
+      })
     })
 
     describe('8. deleteEpisode', ()=>{
-      it('Should delete an episode', ()=>{
+      it('Should delete an episode successfully', ()=>{
         return request_supertest().send({
           query:`mutation{
             deleteEpisode(input:{
-             podcastId:${podcastId}
-             episodeId:${episodeId}
-           }){
-             error
-           }
-           }`
+            podcastId:${podcastId}
+            episodeId:${episodeId}
+          }){
+            error
+          }
+          }`
         }).expect(200).expect(res=>{
           expect(res.body).toEqual({"data": {"deleteEpisode": {"error": 
           null }}})
         })
       })
+
+      it('Should fail to delete an episode', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            deleteEpisode(input:{
+            podcastId:${podcastId+1}
+            episodeId:${episodeId+1}
+          }){
+            error
+          }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"deleteEpisode": {"error": 
+          `Podcast with id ${podcastId+1} not found` }}})
+        })
+      })
     })
     
     describe('9. deletePodcast', ()=>{
-      it('Should delete a podcast', ()=>{
+      it('Should delete a podcast successfully', ()=>{
         return request_supertest().send({
           query:`mutation{
             deletePodcast(input:{
@@ -210,12 +342,27 @@ describe('App (e2e)', () => {
           null, "ok": true }}})
         })
       })
+
+      it('Should fail to delete a podcast', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            deletePodcast(input:{
+              id:${podcastId+1}
+            }){
+              ok
+              error
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"deletePodcast": {"error": 
+          "Podcast with id 2 not found", "ok": false }}})
+        })
+      })
     })
 
   });
 
   describe('Users Resolver', () => {
-    
     let email:string = "email@email.com"
     let password:string = "thisispassword"
     let token:string

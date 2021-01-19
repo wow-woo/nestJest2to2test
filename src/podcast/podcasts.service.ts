@@ -60,10 +60,7 @@ export class PodcastsService {
         id,
       };
     } catch (e) {
-      // return this.InternalServerErrorOutput;
-      return {
-        ok:false, error:e
-      }
+      return this.InternalServerErrorOutput;
     }
   }
 
