@@ -272,12 +272,12 @@ describe('App (e2e)', () => {
         })
       })
 
-      it('Should fail to update an episode', ()=>{
+      it('Should fail to update an episode, due to podcast Not found', ()=>{
         return request_supertest().send({
           query:`mutation{
             updateEpisode(input:{
               podcastId: ${podcastId+1}
-              episodeId: ${episodeId+1}
+              episodeId: ${episodeId}
               category:"update category"
               title:"update title"
             }){
@@ -288,6 +288,25 @@ describe('App (e2e)', () => {
         }).expect(200).expect(res=>{
           expect(res.body).toEqual({"data": {"updateEpisode": {"error": 
           `Podcast with id ${podcastId+1} not found`, "ok": false }}})
+        })
+      })
+
+      it('Should fail to update an episode, due to episode Not found', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            updateEpisode(input:{
+              podcastId: ${podcastId}
+              episodeId: ${episodeId+1}
+              category:"update category"
+              title:"update title"
+            }){
+              ok
+              error
+            }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"updateEpisode": {"error": 
+          `Episode with id ${episodeId+1} not found in podcast with id ${podcastId}`, "ok": false }}})
         })
       })
     })
@@ -309,12 +328,12 @@ describe('App (e2e)', () => {
         })
       })
 
-      it('Should fail to delete an episode', ()=>{
+      it('Should fail to delete an episode, due to podcast Not found', ()=>{
         return request_supertest().send({
           query:`mutation{
             deleteEpisode(input:{
             podcastId:${podcastId+1}
-            episodeId:${episodeId+1}
+            episodeId:${episodeId}
           }){
             error
           }
@@ -322,6 +341,22 @@ describe('App (e2e)', () => {
         }).expect(200).expect(res=>{
           expect(res.body).toEqual({"data": {"deleteEpisode": {"error": 
           `Podcast with id ${podcastId+1} not found` }}})
+        })
+      })
+
+      it('Should fail to delete an episode, due to episode Not found', ()=>{
+        return request_supertest().send({
+          query:`mutation{
+            deleteEpisode(input:{
+            podcastId:${podcastId}
+            episodeId:${episodeId+1}
+          }){
+            error
+          }
+          }`
+        }).expect(200).expect(res=>{
+          expect(res.body).toEqual({"data": {"deleteEpisode": {"error": 
+          `Episode with id ${episodeId+1} not found in podcast with id ${podcastId}` }}})
         })
       })
     })
