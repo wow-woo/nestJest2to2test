@@ -60,7 +60,9 @@ let PodcastsService = class PodcastsService {
             };
         }
         catch (e) {
-            return this.InternalServerErrorOutput;
+            return {
+                ok: false, error: e
+            };
         }
     }
     async getPodcast(id) {
@@ -157,7 +159,6 @@ let PodcastsService = class PodcastsService {
             const newEpisode = this.episodeRepository.create({ title, category });
             newEpisode.podcast = podcast;
             const result = await this.episodeRepository.save(newEpisode);
-            console.log('newwwwwwwww', result);
             const { id } = result;
             return {
                 ok: true,

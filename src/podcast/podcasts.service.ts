@@ -60,7 +60,10 @@ export class PodcastsService {
         id,
       };
     } catch (e) {
-      return this.InternalServerErrorOutput;
+      // return this.InternalServerErrorOutput;
+      return {
+        ok:false, error:e
+      }
     }
   }
 
@@ -175,7 +178,6 @@ export class PodcastsService {
       const newEpisode = this.episodeRepository.create({ title, category });
       newEpisode.podcast = podcast;
       const result = await this.episodeRepository.save(newEpisode);
-      console.log('newwwwwwwww', result)
       const { id } = result
       return {
         ok: true,
